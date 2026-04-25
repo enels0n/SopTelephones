@@ -1,0 +1,14 @@
+core:
+  world: world
+  x: 0.0
+  y: 64.0
+  z: 0.0
+  radius: 128.0
+
+economy:
+  server-tax-percent: 10.0
+  require-vault: true
+
+messages:
+  require-recipient-online: true
+
