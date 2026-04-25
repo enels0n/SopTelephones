@@ -4,7 +4,9 @@ import java.util.List;
 import net.enelson.soptelephones.SopTelephonesPlugin;
 import net.enelson.soptelephones.model.ContactEntry;
 import net.enelson.soptelephones.model.PhoneAccount;
+import net.enelson.soptelephones.model.PhoneDevice;
 import net.enelson.soptelephones.model.Provider;
+import net.enelson.soptelephones.model.SimCard;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -85,18 +87,27 @@ public final class PhoneCommand implements CommandExecutor {
     }
 
     private void showOverview(Player player) {
-        PhoneAccount primary = this.plugin.getPhoneService().getPrimaryAccount(player.getUniqueId());
-        if (primary == null) {
-            player.sendMessage(ChatColor.YELLOW + "You do not own a phone yet.");
+        PhoneDevice device = this.plugin.getPhoneItemService().getPhoneDeviceInHand(player);
+        if (device == null) {
+            player.sendMessage(ChatColor.YELLOW + "Hold a phone in your main hand.");
             return;
         }
 
-        Provider provider = this.plugin.getProviderService().getProvider(primary.getProviderId());
-        boolean covered = this.plugin.getTowerService().isCovered(primary.getProviderId(), player.getLocation());
+        SimCard sim = this.plugin.getPhoneService().getInstalledSim(device);
+        if (sim == null) {
+            player.sendMessage(ChatColor.AQUA + "Phone status");
+            player.sendMessage(ChatColor.GRAY + "Model: " + ChatColor.WHITE + device.getModelId());
+            player.sendMessage(ChatColor.GRAY + "SIM: " + ChatColor.RED + "not installed");
+            player.sendMessage(ChatColor.GRAY + "Tip: " + ChatColor.WHITE + "sneak-right-click with a SIM in offhand");
+            return;
+        }
+
+        Provider provider = this.plugin.getProviderService().getProvider(sim.getProviderId());
+        boolean covered = this.plugin.getTowerService().isCovered(sim.getProviderId(), player.getLocation(), this.plugin.getPhoneItemService().getSignalBonus(device));
 
         player.sendMessage(ChatColor.AQUA + "Phone status");
-        player.sendMessage(ChatColor.GRAY + "Primary: " + ChatColor.WHITE + primary.getNumber());
-        player.sendMessage(ChatColor.GRAY + "Provider: " + ChatColor.WHITE + (provider == null ? primary.getProviderId() : provider.getDisplayName()));
+        player.sendMessage(ChatColor.GRAY + "Number: " + ChatColor.WHITE + sim.getNumber());
+        player.sendMessage(ChatColor.GRAY + "Provider: " + ChatColor.WHITE + (provider == null ? sim.getProviderId() : provider.getDisplayName()));
         player.sendMessage(ChatColor.GRAY + "Coverage: " + (covered ? ChatColor.GREEN + "online" : ChatColor.RED + "offline"));
         player.sendMessage(ChatColor.GRAY + "Contacts: " + ChatColor.WHITE + this.plugin.getContactService().getContacts(player.getUniqueId()).size());
     }

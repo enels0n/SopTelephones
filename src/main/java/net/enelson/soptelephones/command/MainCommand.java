@@ -4,7 +4,9 @@ import java.util.UUID;
 import net.enelson.soptelephones.SopTelephonesPlugin;
 import net.enelson.soptelephones.model.NumberRange;
 import net.enelson.soptelephones.model.PhoneAccount;
+import net.enelson.soptelephones.model.PhoneDevice;
 import net.enelson.soptelephones.model.Provider;
+import net.enelson.soptelephones.model.SimCard;
 import net.enelson.soptelephones.model.Tower;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -12,6 +14,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 public final class MainCommand implements CommandExecutor {
     private final SopTelephonesPlugin plugin;
@@ -147,6 +151,52 @@ public final class MainCommand implements CommandExecutor {
             return true;
         }
 
+        if (args.length == 4 && args[0].equalsIgnoreCase("phone") && args[1].equalsIgnoreCase("give")) {
+            Player target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(ChatColor.RED + "Target player must be online.");
+                return true;
+            }
+            if (this.plugin.getPhoneItemService().getPhoneModel(args[3]) == null) {
+                sender.sendMessage(ChatColor.RED + "Unknown phone model.");
+                return true;
+            }
+            PhoneDevice device = this.plugin.getPhoneService().createDevice(args[3]);
+            ItemStack item = this.plugin.getPhoneItemService().createPhoneItem(device);
+            target.getInventory().addItem(item);
+            sender.sendMessage(ChatColor.GREEN + "Phone given: " + device.getDeviceId());
+            target.sendMessage(ChatColor.AQUA + "You received a phone: " + ChatColor.WHITE + args[3]);
+            return true;
+        }
+
+        if (args.length == 5 && args[0].equalsIgnoreCase("sim") && args[1].equalsIgnoreCase("give")) {
+            Player target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(ChatColor.RED + "Target player must be online.");
+                return true;
+            }
+            Provider provider = this.plugin.getProviderService().getProvider(args[3]);
+            if (provider == null) {
+                sender.sendMessage(ChatColor.RED + "Unknown provider.");
+                return true;
+            }
+            if (this.plugin.getProviderService().findRange(provider.getId(), args[4]) == null) {
+                sender.sendMessage(ChatColor.RED + "Number is not inside provider ranges.");
+                return true;
+            }
+            if (this.plugin.getPhoneService().getByNumber(args[4]) != null) {
+                sender.sendMessage(ChatColor.RED + "That number is already assigned.");
+                return true;
+            }
+
+            this.plugin.getPhoneService().assignPhone(target.getUniqueId(), provider.getId(), args[4]);
+            SimCard simCard = this.plugin.getPhoneService().createSim(target.getUniqueId(), provider.getId(), args[4]);
+            target.getInventory().addItem(this.plugin.getPhoneItemService().createSimItem(simCard));
+            sender.sendMessage(ChatColor.GREEN + "SIM given: " + simCard.getNumber());
+            target.sendMessage(ChatColor.AQUA + "You received a SIM card: " + ChatColor.WHITE + simCard.getNumber());
+            return true;
+        }
+
         if (args.length == 4 && args[0].equalsIgnoreCase("phone") && args[1].equalsIgnoreCase("primary")) {
             OfflinePlayer target = Bukkit.getOfflinePlayer(args[2]);
             PhoneAccount account = this.plugin.getPhoneService().getByNumber(args[3]);
@@ -165,7 +215,9 @@ public final class MainCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "/soptelephones range add <providerId> <prefix> <from> <to>");
         sender.sendMessage(ChatColor.YELLOW + "/soptelephones tower add <id> <providerId> <world> <x> <y> <z> <coverageRadius> [linkRadius]");
         sender.sendMessage(ChatColor.YELLOW + "/soptelephones phone assign <player> <providerId> <number>");
+        sender.sendMessage(ChatColor.YELLOW + "/soptelephones phone give <player> <modelId>");
         sender.sendMessage(ChatColor.YELLOW + "/soptelephones phone primary <player> <number>");
+        sender.sendMessage(ChatColor.YELLOW + "/soptelephones sim give <player> <providerId> <number>");
         sender.sendMessage(ChatColor.YELLOW + "/phone");
         return true;
     }

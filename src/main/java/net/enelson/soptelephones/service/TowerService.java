@@ -57,6 +57,10 @@ public final class TowerService {
     }
 
     public boolean isCovered(String providerId, Location location) {
+        return isCovered(providerId, location, 0.0D);
+    }
+
+    public boolean isCovered(String providerId, Location location, double signalBonus) {
         if (providerId == null || location == null || location.getWorld() == null) {
             return false;
         }
@@ -64,7 +68,8 @@ public final class TowerService {
             if (!tower.isSameWorld(location)) {
                 continue;
             }
-            if (distanceSquared(tower, location) <= tower.getCoverageRadius() * tower.getCoverageRadius()) {
+            double coverageRadius = Math.max(0.0D, tower.getCoverageRadius() + signalBonus);
+            if (distanceSquared(tower, location) <= coverageRadius * coverageRadius) {
                 return true;
             }
         }
@@ -167,4 +172,3 @@ public final class TowerService {
         this.storageManager.saveTowers();
     }
 }
-

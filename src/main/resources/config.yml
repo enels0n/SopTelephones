@@ -12,3 +12,20 @@ economy:
 messages:
   require-recipient-online: true
 
+phone-models:
+  basic:
+    display-name: '&bBasic Telephone'
+    item-key: 'item.custom.telephone.basic'
+    custom-model-data: 1000
+    unread-custom-model-data: 1001
+    no-sim-custom-model-data: 1002
+    signal-bonus: 0.0
+    history-size: 10
+  longrange:
+    display-name: '&3Long-Range Telephone'
+    item-key: 'item.custom.telephone.longrange'
+    custom-model-data: 1010
+    unread-custom-model-data: 1011
+    no-sim-custom-model-data: 1012
+    signal-bonus: 48.0
+    history-size: 16
