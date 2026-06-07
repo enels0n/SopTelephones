@@ -1,7 +1,11 @@
 package net.enelson.soptelephones.service;
 
 import java.text.DecimalFormat;
+import java.util.List;
 import net.enelson.soptelephones.SopTelephonesPlugin;
+import net.enelson.soptelephones.event.SmsDeliveredEvent;
+import net.enelson.soptelephones.event.SmsQueuedEvent;
+import net.enelson.soptelephones.event.SmsSentEvent;
 import net.enelson.soptelephones.model.PhoneAccount;
 import net.enelson.soptelephones.model.PhoneDevice;
 import net.enelson.soptelephones.model.Provider;
@@ -69,7 +73,8 @@ public final class SmsService {
         }
 
         Player recipient = Bukkit.getPlayer(recipientAccount.getOwnerId());
-        if (recipient == null && this.plugin.getConfig().getBoolean("messages.require-recipient-online", true)) {
+        boolean queueOffline = this.plugin.getConfig().getBoolean("messages.queue-offline-delivery", true);
+        if (recipient == null && this.plugin.getConfig().getBoolean("messages.require-recipient-online", true) && !queueOffline) {
             return ChatColor.RED + "Recipient is offline.";
         }
 
@@ -96,16 +101,45 @@ public final class SmsService {
 
         SmsMessage message = new SmsMessage(senderSim.getNumber(), recipientAccount.getNumber(), content, System.currentTimeMillis());
         this.messageHistoryService.recordMessage(message);
+        Bukkit.getPluginManager().callEvent(new SmsSentEvent(sender, recipientAccount, message, price));
 
         if (recipient != null) {
-            recipient.sendMessage(ChatColor.AQUA + "[SMS] " + message.getFromNumber() + ": " + ChatColor.WHITE + message.getContent());
-            recipient.playSound(recipient.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8F, 1.7F);
-            this.phoneService.markUnread(recipientAccount.getNumber());
-            this.phoneItemService.syncPlayerInventory(recipient);
+            deliverToOnlineRecipient(recipientAccount, recipient, message, false);
+        } else if (queueOffline) {
+            this.messageHistoryService.queuePendingMessage(message);
+            Bukkit.getPluginManager().callEvent(new SmsQueuedEvent(recipientAccount, message));
         }
 
-        sender.sendMessage(ChatColor.GREEN + "SMS sent to " + message.getToNumber() + " for $" + this.priceFormat.format(price) + ".");
+        sender.sendMessage(ChatColor.GREEN + (recipient == null && queueOffline
+            ? "SMS queued for " + message.getToNumber() + " for $" + this.priceFormat.format(price) + "."
+            : "SMS sent to " + message.getToNumber() + " for $" + this.priceFormat.format(price) + "."));
         return null;
+    }
+
+    public void deliverQueuedMessages(Player recipient) {
+        List<PhoneAccount> accounts = this.phoneService.getAccounts(recipient.getUniqueId());
+        if (accounts.isEmpty()) {
+            return;
+        }
+
+        boolean deliveredAny = false;
+        for (PhoneAccount account : accounts) {
+            List<SmsMessage> pendingMessages = this.messageHistoryService.consumePendingMessages(account.getNumber());
+            if (pendingMessages.isEmpty()) {
+                continue;
+            }
+            this.phoneService.markUnread(account.getNumber());
+            for (SmsMessage message : pendingMessages) {
+                recipient.sendMessage(ChatColor.AQUA + "[Queued SMS] " + message.getFromNumber() + ": " + ChatColor.WHITE + message.getContent());
+                Bukkit.getPluginManager().callEvent(new SmsDeliveredEvent(recipient, message, true));
+            }
+            deliveredAny = true;
+        }
+
+        if (deliveredAny) {
+            recipient.playSound(recipient.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8F, 1.7F);
+            this.phoneItemService.syncPlayerInventory(recipient);
+        }
     }
 
     private PhoneDevice findRecipientDevice(Player player, String number) {
@@ -113,5 +147,13 @@ public final class SmsService {
             return device;
         }
         return null;
+    }
+
+    private void deliverToOnlineRecipient(PhoneAccount recipientAccount, Player recipient, SmsMessage message, boolean queued) {
+        recipient.sendMessage(ChatColor.AQUA + (queued ? "[Queued SMS] " : "[SMS] ") + message.getFromNumber() + ": " + ChatColor.WHITE + message.getContent());
+        recipient.playSound(recipient.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8F, 1.7F);
+        this.phoneService.markUnread(recipientAccount.getNumber());
+        this.phoneItemService.syncPlayerInventory(recipient);
+        Bukkit.getPluginManager().callEvent(new SmsDeliveredEvent(recipient, message, queued));
     }
 }

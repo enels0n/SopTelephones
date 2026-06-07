@@ -5,7 +5,7 @@
 
     <groupId>net.enelson.soptelephones</groupId>
     <artifactId>SopTelephones</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <name>SopTelephones</name>
     <description>Provider-based telephones, coverage towers and SMS economy.</description>
 
@@ -48,10 +48,6 @@
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
-            <id>placeholderapi</id>
-            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
-        </repository>
-        <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
@@ -75,7 +71,7 @@
         <dependency>
             <groupId>net.enelson.sopli.lib</groupId>
             <artifactId>soplib-core</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>1.0.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

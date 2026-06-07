@@ -1,8 +1,10 @@
 package net.enelson.soptelephones;
 
+import net.enelson.soptelephones.api.SopTelephonesApi;
 import net.enelson.soptelephones.command.MainCommand;
 import net.enelson.soptelephones.command.PhoneCommand;
 import net.enelson.soptelephones.command.SmsCommand;
+import net.enelson.soptelephones.listener.PlayerSessionListener;
 import net.enelson.soptelephones.listener.PhoneItemListener;
 import net.enelson.soptelephones.storage.StorageManager;
 import net.enelson.soptelephones.service.ContactService;
@@ -29,6 +31,7 @@ public final class SopTelephonesPlugin extends JavaPlugin {
     private TowerService towerService;
     private EconomyService economyService;
     private SmsService smsService;
+    private SopTelephonesApi api;
 
     @Override
     public void onEnable() {
@@ -45,12 +48,14 @@ public final class SopTelephonesPlugin extends JavaPlugin {
         this.towerService = new TowerService(this);
         this.economyService = new EconomyService(this);
         this.smsService = new SmsService(this, this.providerService, this.phoneService, this.phoneItemService, this.messageHistoryService, this.towerService, this.economyService);
+        this.api = new SopTelephonesApi(this);
 
         MainCommand mainCommand = new MainCommand(this);
         getCommand("soptelephones").setExecutor(mainCommand);
         getCommand("sms").setExecutor(new SmsCommand(this));
         getCommand("phone").setExecutor(new PhoneCommand(this));
         getServer().getPluginManager().registerEvents(new PhoneItemListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerSessionListener(this), this);
     }
 
     public static SopTelephonesPlugin getInstance() {
@@ -66,6 +71,7 @@ public final class SopTelephonesPlugin extends JavaPlugin {
         this.contactService.reload();
         this.messageHistoryService.reload();
         this.towerService.reload();
+        this.economyService.reload();
     }
 
     public StorageManager getStorageManager() {
@@ -106,5 +112,9 @@ public final class SopTelephonesPlugin extends JavaPlugin {
 
     public SmsService getSmsService() {
         return smsService;
+    }
+
+    public SopTelephonesApi getApi() {
+        return api;
     }
 }

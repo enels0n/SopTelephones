@@ -14,10 +14,10 @@ Current MVP:
 - relay towers
 - core uplink coverage check
 - SMS with Vault economy
+- queued offline SMS delivery on login
+- basic Bukkit API/events for SMS integrations
 
 Planned next:
-- offline queue
-- contacts
 - multiple phones with player-side selection
 - provider balances payout tools
 - tariffs and inter-provider prices
@@ -41,6 +41,16 @@ Player commands:
 - `/phone contact add <name> <number>`
 - `/phone contact remove <name>`
 - `/sms <number> <message>`
+
+Config notes:
+- `messages.require-recipient-online: true` keeps the old strict behavior unless offline queue is enabled
+- `messages.queue-offline-delivery: true` stores SMS for offline recipients and delivers them on login
+
+API/events:
+- `SopTelephonesApi`
+- `SmsSentEvent`
+- `SmsQueuedEvent`
+- `SmsDeliveredEvent`
 
 Phone item flow:
 - hold the phone and right-click to open the menu

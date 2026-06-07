@@ -14,6 +14,10 @@ public final class EconomyService {
         setup();
     }
 
+    public void reload() {
+        setup();
+    }
+
     private void setup() {
         RegisteredServiceProvider<Economy> provider = this.plugin.getServer().getServicesManager().getRegistration(Economy.class);
         this.economy = provider == null ? null : provider.getProvider();
@@ -34,4 +38,3 @@ public final class EconomyService {
         return this.economy == null || this.economy.withdrawPlayer(player, amount).transactionSuccess();
     }
 }
-

@@ -11,6 +11,7 @@ economy:
 
 messages:
   require-recipient-online: true
+  queue-offline-delivery: true
 
 phone-models:
   basic:
