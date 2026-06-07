@@ -12,7 +12,6 @@ import net.enelson.soptelephones.model.Provider;
 import net.enelson.soptelephones.model.SimCard;
 import net.enelson.soptelephones.model.SmsMessage;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
@@ -46,52 +45,52 @@ public final class SmsService {
 
     public String send(Player sender, PhoneDevice senderDevice, String toNumber, String content) {
         if (!this.economyService.isEnabled()) {
-            return ChatColor.RED + "Economy is unavailable.";
+            return this.plugin.message("economy-unavailable");
         }
 
         SimCard senderSim = this.phoneService.getInstalledSim(senderDevice);
         if (senderSim == null) {
-            return ChatColor.RED + "No SIM is installed in that phone.";
+            return this.plugin.message("sim-missing-phone");
         }
 
         PhoneAccount recipientAccount = this.phoneService.getByNumber(toNumber);
         if (recipientAccount == null) {
-            return ChatColor.RED + "Unknown number.";
+            return this.plugin.message("unknown-number");
         }
 
         Provider senderProvider = this.providerService.getProvider(senderSim.getProviderId());
         if (senderProvider == null) {
-            return ChatColor.RED + "Your provider is missing.";
+            return this.plugin.message("sender-provider-missing");
         }
 
         if (this.providerService.findRange(senderProvider.getId(), senderSim.getNumber()) == null) {
-            return ChatColor.RED + "Your number is outside the provider ranges.";
+            return this.plugin.message("sender-number-outside-range");
         }
 
         if (!this.towerService.isCovered(senderProvider.getId(), sender.getLocation(), this.phoneItemService.getSignalBonus(senderDevice))) {
-            return ChatColor.RED + "No coverage from your provider.";
+            return this.plugin.message("sender-no-coverage");
         }
 
         Player recipient = Bukkit.getPlayer(recipientAccount.getOwnerId());
         boolean queueOffline = this.plugin.getConfig().getBoolean("messages.queue-offline-delivery", true);
         if (recipient == null && this.plugin.getConfig().getBoolean("messages.require-recipient-online", true) && !queueOffline) {
-            return ChatColor.RED + "Recipient is offline.";
+            return this.plugin.message("recipient-offline");
         }
 
         PhoneDevice recipientDevice = recipient == null ? null : findRecipientDevice(recipient, recipientAccount.getNumber());
         if (recipient != null && recipientDevice == null) {
-            return ChatColor.RED + "Recipient does not have that phone available.";
+            return this.plugin.message("recipient-no-phone");
         }
         if (recipient != null && !this.towerService.isCovered(recipientAccount.getProviderId(), recipient.getLocation(), this.phoneItemService.getSignalBonus(recipientDevice))) {
-            return ChatColor.RED + "Recipient is currently out of coverage.";
+            return this.plugin.message("recipient-no-coverage");
         }
 
         double price = Math.max(0.0D, senderProvider.getSmsPrice());
         if (!this.economyService.has(sender, price)) {
-            return ChatColor.RED + "You need $" + this.priceFormat.format(price) + " to send this message.";
+            return this.plugin.message("not-enough-money", "{price}", this.priceFormat.format(price));
         }
         if (!this.economyService.withdraw(sender, price)) {
-            return ChatColor.RED + "Failed to withdraw the SMS cost.";
+            return this.plugin.message("withdraw-failed");
         }
 
         double taxPercent = this.plugin.getConfig().getDouble("economy.server-tax-percent", 10.0D);
@@ -110,9 +109,9 @@ public final class SmsService {
             Bukkit.getPluginManager().callEvent(new SmsQueuedEvent(recipientAccount, message));
         }
 
-        sender.sendMessage(ChatColor.GREEN + (recipient == null && queueOffline
-            ? "SMS queued for " + message.getToNumber() + " for $" + this.priceFormat.format(price) + "."
-            : "SMS sent to " + message.getToNumber() + " for $" + this.priceFormat.format(price) + "."));
+        sender.sendMessage(recipient == null && queueOffline
+            ? this.plugin.message("sms-queued", "{number}", message.getToNumber(), "{price}", this.priceFormat.format(price))
+            : this.plugin.message("sms-sent", "{number}", message.getToNumber(), "{price}", this.priceFormat.format(price)));
         return null;
     }
 
@@ -130,7 +129,7 @@ public final class SmsService {
             }
             this.phoneService.markUnread(account.getNumber());
             for (SmsMessage message : pendingMessages) {
-                recipient.sendMessage(ChatColor.AQUA + "[Queued SMS] " + message.getFromNumber() + ": " + ChatColor.WHITE + message.getContent());
+                recipient.sendMessage(this.plugin.message("queued-sms-format", "{from}", message.getFromNumber(), "{content}", message.getContent()));
                 Bukkit.getPluginManager().callEvent(new SmsDeliveredEvent(recipient, message, true));
             }
             deliveredAny = true;
@@ -150,7 +149,7 @@ public final class SmsService {
     }
 
     private void deliverToOnlineRecipient(PhoneAccount recipientAccount, Player recipient, SmsMessage message, boolean queued) {
-        recipient.sendMessage(ChatColor.AQUA + (queued ? "[Queued SMS] " : "[SMS] ") + message.getFromNumber() + ": " + ChatColor.WHITE + message.getContent());
+        recipient.sendMessage(this.plugin.message(queued ? "queued-sms-format" : "sms-format", "{from}", message.getFromNumber(), "{content}", message.getContent()));
         recipient.playSound(recipient.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.8F, 1.7F);
         this.phoneService.markUnread(recipientAccount.getNumber());
         this.phoneItemService.syncPlayerInventory(recipient);

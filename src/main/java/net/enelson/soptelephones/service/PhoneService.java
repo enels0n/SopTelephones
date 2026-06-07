@@ -10,7 +10,6 @@ import net.enelson.soptelephones.model.PhoneAccount;
 import net.enelson.soptelephones.model.PhoneDevice;
 import net.enelson.soptelephones.model.SimCard;
 import net.enelson.soptelephones.storage.StorageManager;
-import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -163,19 +162,19 @@ public final class PhoneService {
     public String installSimFromItem(Player player, String deviceId, ItemStack simItem) {
         PhoneDevice device = getDevice(deviceId);
         if (device == null) {
-            return ChatColor.RED + "Unknown phone device.";
+            return SopTelephonesPlugin.getInstance().message("unknown-phone-device");
         }
         if (device.hasSim()) {
-            return ChatColor.RED + "This phone already has a SIM installed.";
+            return SopTelephonesPlugin.getInstance().message("phone-has-sim");
         }
 
         String simId = SopTelephonesPlugin.getInstance().getPhoneItemService().getSimId(simItem);
         SimCard sim = getSim(simId);
         if (sim == null) {
-            return ChatColor.RED + "Unknown SIM card.";
+            return SopTelephonesPlugin.getInstance().message("unknown-sim");
         }
         if (!sim.getOwnerId().equals(player.getUniqueId())) {
-            return ChatColor.RED + "This SIM does not belong to you.";
+            return SopTelephonesPlugin.getInstance().message("sim-not-yours");
         }
 
         device.setSimId(sim.getSimId());

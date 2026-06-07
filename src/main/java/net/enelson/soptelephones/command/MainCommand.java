@@ -9,7 +9,6 @@ import net.enelson.soptelephones.model.Provider;
 import net.enelson.soptelephones.model.SimCard;
 import net.enelson.soptelephones.model.Tower;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -27,13 +26,13 @@ public final class MainCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("soptelephones.admin")) {
-            sender.sendMessage(ChatColor.RED + "You do not have permission.");
+            sender.sendMessage(this.plugin.message("no-permission"));
             return true;
         }
 
         if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
             this.plugin.reloadPlugin();
-            sender.sendMessage(ChatColor.GREEN + "SopTelephones reloaded.");
+            sender.sendMessage(this.plugin.message("reloaded"));
             return true;
         }
 
@@ -47,22 +46,22 @@ public final class MainCommand implements CommandExecutor {
                 displayName.append(args[index]);
             }
             Provider provider = this.plugin.getProviderService().createProvider(id, displayName.toString());
-            sender.sendMessage(ChatColor.GREEN + "Provider created: " + provider.getId());
+            sender.sendMessage(this.plugin.message("provider-created", "{id}", provider.getId()));
             return true;
         }
 
         if (args.length == 4 && args[0].equalsIgnoreCase("provider") && args[1].equalsIgnoreCase("price")) {
             Provider provider = this.plugin.getProviderService().getProvider(args[2]);
             if (provider == null) {
-                sender.sendMessage(ChatColor.RED + "Unknown provider.");
+                sender.sendMessage(this.plugin.message("unknown-provider"));
                 return true;
             }
             try {
                 provider.setSmsPrice(Double.parseDouble(args[3]));
                 this.plugin.getProviderService().save();
-                sender.sendMessage(ChatColor.GREEN + "Provider SMS price updated.");
+                sender.sendMessage(this.plugin.message("provider-price-updated"));
             } catch (NumberFormatException exception) {
-                sender.sendMessage(ChatColor.RED + "Price must be numeric.");
+                sender.sendMessage(this.plugin.message("numeric-price"));
             }
             return true;
         }
@@ -70,14 +69,14 @@ public final class MainCommand implements CommandExecutor {
         if (args.length == 6 && args[0].equalsIgnoreCase("range") && args[1].equalsIgnoreCase("add")) {
             Provider provider = this.plugin.getProviderService().getProvider(args[2]);
             if (provider == null) {
-                sender.sendMessage(ChatColor.RED + "Unknown provider.");
+                sender.sendMessage(this.plugin.message("unknown-provider"));
                 return true;
             }
             try {
                 NumberRange range = this.plugin.getProviderService().addRange(args[2], args[3], Integer.parseInt(args[4]), Integer.parseInt(args[5]));
-                sender.sendMessage(ChatColor.GREEN + "Range added: " + range.getPrefix() + "-" + range.getFrom() + ".." + range.getTo());
+                sender.sendMessage(this.plugin.message("range-added", "{prefix}", range.getPrefix(), "{from}", String.valueOf(range.getFrom()), "{to}", String.valueOf(range.getTo())));
             } catch (NumberFormatException exception) {
-                sender.sendMessage(ChatColor.RED + "Range bounds must be numbers.");
+                sender.sendMessage(this.plugin.message("numeric-range"));
             }
             return true;
         }
@@ -85,7 +84,7 @@ public final class MainCommand implements CommandExecutor {
         if (args.length == 9 && args[0].equalsIgnoreCase("tower") && args[1].equalsIgnoreCase("add")) {
             Provider provider = this.plugin.getProviderService().getProvider(args[3]);
             if (provider == null) {
-                sender.sendMessage(ChatColor.RED + "Unknown provider.");
+                sender.sendMessage(this.plugin.message("unknown-provider"));
                 return true;
             }
             try {
@@ -99,9 +98,9 @@ public final class MainCommand implements CommandExecutor {
                     Double.parseDouble(args[8]),
                     Double.parseDouble(args[8])
                 );
-                sender.sendMessage(ChatColor.GREEN + "Tower added: " + tower.getId());
+                sender.sendMessage(this.plugin.message("tower-added", "{id}", tower.getId()));
             } catch (NumberFormatException exception) {
-                sender.sendMessage(ChatColor.RED + "Coordinates and radius must be numeric.");
+                sender.sendMessage(this.plugin.message("numeric-coordinates-radius"));
             }
             return true;
         }
@@ -109,7 +108,7 @@ public final class MainCommand implements CommandExecutor {
         if (args.length == 10 && args[0].equalsIgnoreCase("tower") && args[1].equalsIgnoreCase("add")) {
             Provider provider = this.plugin.getProviderService().getProvider(args[3]);
             if (provider == null) {
-                sender.sendMessage(ChatColor.RED + "Unknown provider.");
+                sender.sendMessage(this.plugin.message("unknown-provider"));
                 return true;
             }
             try {
@@ -123,9 +122,9 @@ public final class MainCommand implements CommandExecutor {
                     Double.parseDouble(args[8]),
                     Double.parseDouble(args[9])
                 );
-                sender.sendMessage(ChatColor.GREEN + "Tower added: " + tower.getId());
+                sender.sendMessage(this.plugin.message("tower-added", "{id}", tower.getId()));
             } catch (NumberFormatException exception) {
-                sender.sendMessage(ChatColor.RED + "Coordinates and radii must be numeric.");
+                sender.sendMessage(this.plugin.message("numeric-coordinates-radii"));
             }
             return true;
         }
@@ -135,65 +134,65 @@ public final class MainCommand implements CommandExecutor {
             UUID ownerId = target.getUniqueId();
             Provider provider = this.plugin.getProviderService().getProvider(args[3]);
             if (provider == null) {
-                sender.sendMessage(ChatColor.RED + "Unknown provider.");
+                sender.sendMessage(this.plugin.message("unknown-provider"));
                 return true;
             }
             if (this.plugin.getProviderService().findRange(provider.getId(), args[4]) == null) {
-                sender.sendMessage(ChatColor.RED + "Number is not inside provider ranges.");
+                sender.sendMessage(this.plugin.message("number-outside-provider-range"));
                 return true;
             }
             if (this.plugin.getPhoneService().getByNumber(args[4]) != null) {
-                sender.sendMessage(ChatColor.RED + "That number is already assigned.");
+                sender.sendMessage(this.plugin.message("number-already-assigned"));
                 return true;
             }
             PhoneAccount account = this.plugin.getPhoneService().assignPhone(ownerId, provider.getId(), args[4]);
-            sender.sendMessage(ChatColor.GREEN + "Assigned " + account.getNumber() + " to " + target.getName() + ".");
+            sender.sendMessage(this.plugin.message("assigned-number", "{number}", account.getNumber(), "{player}", String.valueOf(target.getName())));
             return true;
         }
 
         if (args.length == 4 && args[0].equalsIgnoreCase("phone") && args[1].equalsIgnoreCase("give")) {
             Player target = Bukkit.getPlayerExact(args[2]);
             if (target == null) {
-                sender.sendMessage(ChatColor.RED + "Target player must be online.");
+                sender.sendMessage(this.plugin.message("target-online-required"));
                 return true;
             }
             if (this.plugin.getPhoneItemService().getPhoneModel(args[3]) == null) {
-                sender.sendMessage(ChatColor.RED + "Unknown phone model.");
+                sender.sendMessage(this.plugin.message("unknown-phone-model"));
                 return true;
             }
             PhoneDevice device = this.plugin.getPhoneService().createDevice(args[3]);
             ItemStack item = this.plugin.getPhoneItemService().createPhoneItem(device);
             target.getInventory().addItem(item);
-            sender.sendMessage(ChatColor.GREEN + "Phone given: " + device.getDeviceId());
-            target.sendMessage(ChatColor.AQUA + "You received a phone: " + ChatColor.WHITE + args[3]);
+            sender.sendMessage(this.plugin.message("phone-given-admin", "{id}", device.getDeviceId()));
+            target.sendMessage(this.plugin.message("phone-received", "{model}", args[3]));
             return true;
         }
 
         if (args.length == 5 && args[0].equalsIgnoreCase("sim") && args[1].equalsIgnoreCase("give")) {
             Player target = Bukkit.getPlayerExact(args[2]);
             if (target == null) {
-                sender.sendMessage(ChatColor.RED + "Target player must be online.");
+                sender.sendMessage(this.plugin.message("target-online-required"));
                 return true;
             }
             Provider provider = this.plugin.getProviderService().getProvider(args[3]);
             if (provider == null) {
-                sender.sendMessage(ChatColor.RED + "Unknown provider.");
+                sender.sendMessage(this.plugin.message("unknown-provider"));
                 return true;
             }
             if (this.plugin.getProviderService().findRange(provider.getId(), args[4]) == null) {
-                sender.sendMessage(ChatColor.RED + "Number is not inside provider ranges.");
+                sender.sendMessage(this.plugin.message("number-outside-provider-range"));
                 return true;
             }
             if (this.plugin.getPhoneService().getByNumber(args[4]) != null) {
-                sender.sendMessage(ChatColor.RED + "That number is already assigned.");
+                sender.sendMessage(this.plugin.message("number-already-assigned"));
                 return true;
             }
 
             this.plugin.getPhoneService().assignPhone(target.getUniqueId(), provider.getId(), args[4]);
             SimCard simCard = this.plugin.getPhoneService().createSim(target.getUniqueId(), provider.getId(), args[4]);
             target.getInventory().addItem(this.plugin.getPhoneItemService().createSimItem(simCard));
-            sender.sendMessage(ChatColor.GREEN + "SIM given: " + simCard.getNumber());
-            target.sendMessage(ChatColor.AQUA + "You received a SIM card: " + ChatColor.WHITE + simCard.getNumber());
+            sender.sendMessage(this.plugin.message("sim-given-admin", "{number}", simCard.getNumber()));
+            target.sendMessage(this.plugin.message("sim-received", "{number}", simCard.getNumber()));
             return true;
         }
 
@@ -201,24 +200,24 @@ public final class MainCommand implements CommandExecutor {
             OfflinePlayer target = Bukkit.getOfflinePlayer(args[2]);
             PhoneAccount account = this.plugin.getPhoneService().getByNumber(args[3]);
             if (account == null || !account.getOwnerId().equals(target.getUniqueId())) {
-                sender.sendMessage(ChatColor.RED + "That number does not belong to the player.");
+                sender.sendMessage(this.plugin.message("number-not-player"));
                 return true;
             }
             this.plugin.getPhoneService().setPrimary(target.getUniqueId(), args[3]);
-            sender.sendMessage(ChatColor.GREEN + "Primary number updated.");
+            sender.sendMessage(this.plugin.message("primary-updated"));
             return true;
         }
 
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones reload");
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones provider create <id> <displayName...>");
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones provider price <id> <amount>");
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones range add <providerId> <prefix> <from> <to>");
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones tower add <id> <providerId> <world> <x> <y> <z> <coverageRadius> [linkRadius]");
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones phone assign <player> <providerId> <number>");
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones phone give <player> <modelId>");
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones phone primary <player> <number>");
-        sender.sendMessage(ChatColor.YELLOW + "/soptelephones sim give <player> <providerId> <number>");
-        sender.sendMessage(ChatColor.YELLOW + "/phone");
+        sender.sendMessage(this.plugin.message("usage.main-reload"));
+        sender.sendMessage(this.plugin.message("usage.main-provider-create"));
+        sender.sendMessage(this.plugin.message("usage.main-provider-price"));
+        sender.sendMessage(this.plugin.message("usage.main-range-add"));
+        sender.sendMessage(this.plugin.message("usage.main-tower-add"));
+        sender.sendMessage(this.plugin.message("usage.main-phone-assign"));
+        sender.sendMessage(this.plugin.message("usage.main-phone-give"));
+        sender.sendMessage(this.plugin.message("usage.main-phone-primary"));
+        sender.sendMessage(this.plugin.message("usage.main-sim-give"));
+        sender.sendMessage(this.plugin.message("usage.phone-root"));
         return true;
     }
 }

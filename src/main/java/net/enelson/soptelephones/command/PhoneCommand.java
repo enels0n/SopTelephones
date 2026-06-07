@@ -7,7 +7,6 @@ import net.enelson.soptelephones.model.PhoneAccount;
 import net.enelson.soptelephones.model.PhoneDevice;
 import net.enelson.soptelephones.model.Provider;
 import net.enelson.soptelephones.model.SimCard;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,7 +22,7 @@ public final class PhoneCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can manage phones.");
+            sender.sendMessage(this.plugin.message("only-players-phone"));
             return true;
         }
 
@@ -36,33 +35,33 @@ public final class PhoneCommand implements CommandExecutor {
         if (args.length == 2 && args[0].equalsIgnoreCase("use")) {
             PhoneAccount account = this.plugin.getPhoneService().getByNumber(args[1]);
             if (account == null || !account.getOwnerId().equals(player.getUniqueId())) {
-                player.sendMessage(ChatColor.RED + "That phone number does not belong to you.");
+                player.sendMessage(this.plugin.message("number-not-yours"));
                 return true;
             }
             this.plugin.getPhoneService().setPrimary(player.getUniqueId(), account.getNumber());
-            player.sendMessage(ChatColor.GREEN + "Primary phone switched to " + account.getNumber() + ".");
+            player.sendMessage(this.plugin.message("primary-switched", "{number}", account.getNumber()));
             return true;
         }
 
         if (args.length == 2 && args[0].equalsIgnoreCase("contact") && args[1].equalsIgnoreCase("list")) {
             List<ContactEntry> contacts = this.plugin.getContactService().getContacts(player.getUniqueId());
             if (contacts.isEmpty()) {
-                player.sendMessage(ChatColor.YELLOW + "You do not have saved contacts.");
+                player.sendMessage(this.plugin.message("contacts-empty"));
                 return true;
             }
-            player.sendMessage(ChatColor.AQUA + "Contacts:");
+            player.sendMessage(this.plugin.message("contacts-title"));
             for (ContactEntry contact : contacts) {
-                player.sendMessage(ChatColor.GRAY + "- " + ChatColor.WHITE + contact.getName() + ChatColor.DARK_GRAY + " -> " + ChatColor.AQUA + contact.getNumber());
+                player.sendMessage(this.plugin.message("contacts-entry", "{name}", contact.getName(), "{number}", contact.getNumber()));
             }
             return true;
         }
 
         if (args.length == 3 && args[0].equalsIgnoreCase("contact") && args[1].equalsIgnoreCase("remove")) {
             if (!this.plugin.getContactService().removeContact(player.getUniqueId(), args[2])) {
-                player.sendMessage(ChatColor.RED + "Contact not found.");
+                player.sendMessage(this.plugin.message("contact-not-found"));
                 return true;
             }
-            player.sendMessage(ChatColor.GREEN + "Contact removed.");
+            player.sendMessage(this.plugin.message("contact-removed"));
             return true;
         }
 
@@ -70,45 +69,45 @@ public final class PhoneCommand implements CommandExecutor {
             String name = args[2];
             String number = args[3];
             if (this.plugin.getPhoneService().getByNumber(number) == null) {
-                player.sendMessage(ChatColor.RED + "Unknown phone number.");
+                player.sendMessage(this.plugin.message("unknown-number"));
                 return true;
             }
             this.plugin.getContactService().setContact(player.getUniqueId(), name, number);
-            player.sendMessage(ChatColor.GREEN + "Contact saved: " + name + " -> " + number);
+            player.sendMessage(this.plugin.message("contact-saved", "{name}", name, "{number}", number));
             return true;
         }
 
-        player.sendMessage(ChatColor.YELLOW + "/phone");
-        player.sendMessage(ChatColor.YELLOW + "/phone use <number>");
-        player.sendMessage(ChatColor.YELLOW + "/phone contact list");
-        player.sendMessage(ChatColor.YELLOW + "/phone contact add <name> <number>");
-        player.sendMessage(ChatColor.YELLOW + "/phone contact remove <name>");
+        player.sendMessage(this.plugin.message("usage.phone-root"));
+        player.sendMessage(this.plugin.message("usage.phone-use"));
+        player.sendMessage(this.plugin.message("usage.phone-contact-list"));
+        player.sendMessage(this.plugin.message("usage.phone-contact-add"));
+        player.sendMessage(this.plugin.message("usage.phone-contact-remove"));
         return true;
     }
 
     private void showOverview(Player player) {
         PhoneDevice device = this.plugin.getPhoneItemService().getPhoneDeviceInHand(player);
         if (device == null) {
-            player.sendMessage(ChatColor.YELLOW + "Hold a phone in your main hand.");
+            player.sendMessage(this.plugin.message("hold-phone"));
             return;
         }
 
         SimCard sim = this.plugin.getPhoneService().getInstalledSim(device);
         if (sim == null) {
-            player.sendMessage(ChatColor.AQUA + "Phone status");
-            player.sendMessage(ChatColor.GRAY + "Model: " + ChatColor.WHITE + device.getModelId());
-            player.sendMessage(ChatColor.GRAY + "SIM: " + ChatColor.RED + "not installed");
-            player.sendMessage(ChatColor.GRAY + "Tip: " + ChatColor.WHITE + "sneak-right-click with a SIM in offhand");
+            player.sendMessage(this.plugin.message("status.title"));
+            player.sendMessage(this.plugin.message("status.model", "{model}", device.getModelId()));
+            player.sendMessage(this.plugin.message("status.sim-missing"));
+            player.sendMessage(this.plugin.message("status.sim-tip"));
             return;
         }
 
         Provider provider = this.plugin.getProviderService().getProvider(sim.getProviderId());
         boolean covered = this.plugin.getTowerService().isCovered(sim.getProviderId(), player.getLocation(), this.plugin.getPhoneItemService().getSignalBonus(device));
 
-        player.sendMessage(ChatColor.AQUA + "Phone status");
-        player.sendMessage(ChatColor.GRAY + "Number: " + ChatColor.WHITE + sim.getNumber());
-        player.sendMessage(ChatColor.GRAY + "Provider: " + ChatColor.WHITE + (provider == null ? sim.getProviderId() : provider.getDisplayName()));
-        player.sendMessage(ChatColor.GRAY + "Coverage: " + (covered ? ChatColor.GREEN + "online" : ChatColor.RED + "offline"));
-        player.sendMessage(ChatColor.GRAY + "Contacts: " + ChatColor.WHITE + this.plugin.getContactService().getContacts(player.getUniqueId()).size());
+        player.sendMessage(this.plugin.message("status.title"));
+        player.sendMessage(this.plugin.message("status.number", "{number}", sim.getNumber()));
+        player.sendMessage(this.plugin.message("status.provider", "{provider}", provider == null ? sim.getProviderId() : provider.getDisplayName()));
+        player.sendMessage(this.plugin.message("status.coverage", "{status}", covered ? this.plugin.message("state.online") : this.plugin.message("state.offline")));
+        player.sendMessage(this.plugin.message("status.contacts", "{count}", String.valueOf(this.plugin.getContactService().getContacts(player.getUniqueId()).size())));
     }
 }

@@ -1,5 +1,7 @@
 package net.enelson.soptelephones;
 
+import net.enelson.sopli.lib.SopLib;
+import net.enelson.sopli.lib.text.TextUtils;
 import net.enelson.soptelephones.api.SopTelephonesApi;
 import net.enelson.soptelephones.command.MainCommand;
 import net.enelson.soptelephones.command.PhoneCommand;
@@ -32,11 +34,13 @@ public final class SopTelephonesPlugin extends JavaPlugin {
     private EconomyService economyService;
     private SmsService smsService;
     private SopTelephonesApi api;
+    private TextUtils textUtils;
 
     @Override
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        this.textUtils = SopLib.getInstance() != null ? SopLib.getInstance().getTextUtils() : new TextUtils();
 
         this.storageManager = new StorageManager(this);
         this.providerService = new ProviderService(this.storageManager);
@@ -64,6 +68,7 @@ public final class SopTelephonesPlugin extends JavaPlugin {
 
     public void reloadPlugin() {
         reloadConfig();
+        this.textUtils = SopLib.getInstance() != null ? SopLib.getInstance().getTextUtils() : new TextUtils();
         this.storageManager.reload();
         this.providerService.reload();
         this.phoneService.reload();
@@ -116,5 +121,13 @@ public final class SopTelephonesPlugin extends JavaPlugin {
 
     public SopTelephonesApi getApi() {
         return api;
+    }
+
+    public String message(String path, String... replacements) {
+        String value = getConfig().getString("messages." + path, "&cMissing message: " + path);
+        for (int i = 0; i + 1 < replacements.length; i += 2) {
+            value = value.replace(replacements[i], replacements[i + 1]);
+        }
+        return this.textUtils.color(value);
     }
 }

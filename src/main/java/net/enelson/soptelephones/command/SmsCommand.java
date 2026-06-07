@@ -4,7 +4,6 @@ import net.enelson.soptelephones.SopTelephonesPlugin;
 import net.enelson.soptelephones.model.ContactEntry;
 import net.enelson.soptelephones.model.PhoneDevice;
 import net.enelson.soptelephones.model.SimCard;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,23 +19,23 @@ public final class SmsCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can send SMS.");
+            sender.sendMessage(this.plugin.message("only-players-sms"));
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.YELLOW + "Usage: /sms <number> <message>");
+            sender.sendMessage(this.plugin.message("usage.sms"));
             return true;
         }
 
         Player player = (Player) sender;
         PhoneDevice device = this.plugin.getPhoneItemService().getPhoneDeviceInHand(player);
         if (device == null) {
-            player.sendMessage(ChatColor.RED + "Hold a phone in your main hand.");
+            player.sendMessage(this.plugin.message("hold-phone"));
             return true;
         }
         SimCard sim = this.plugin.getPhoneService().getInstalledSim(device);
         if (sim == null) {
-            player.sendMessage(ChatColor.RED + "Insert a SIM into the phone first.");
+            player.sendMessage(this.plugin.message("insert-sim-first"));
             return true;
         }
 

@@ -2,7 +2,6 @@ package net.enelson.soptelephones.listener;
 
 import net.enelson.soptelephones.SopTelephonesPlugin;
 import net.enelson.soptelephones.ui.PhoneMenuHolder;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -55,19 +54,19 @@ public final class PhoneItemListener implements Listener {
                     } else {
                         offhand.setAmount(offhand.getAmount() - 1);
                     }
-                    player.sendMessage(ChatColor.GREEN + "SIM inserted into the phone.");
+                    player.sendMessage(this.plugin.message("sim-inserted"));
                 }
                 return;
             }
 
             ItemStack simItem = this.plugin.getPhoneService().ejectSimToItem(deviceId);
             if (simItem == null) {
-                player.sendMessage(ChatColor.RED + "There is no SIM installed.");
+                player.sendMessage(this.plugin.message("sim-not-installed"));
                 return;
             }
             player.getInventory().addItem(simItem);
             this.plugin.getPhoneItemService().syncPlayerInventory(player);
-            player.sendMessage(ChatColor.YELLOW + "SIM ejected from the phone.");
+            player.sendMessage(this.plugin.message("sim-ejected"));
             return;
         }
 
